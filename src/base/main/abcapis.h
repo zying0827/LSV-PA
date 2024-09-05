@@ -82,6 +82,7 @@ extern ABC_DLL void   Abc_FrameGiaInputMiniLut2( Abc_Frame_t * pAbc, void * pMin
 extern ABC_DLL void * Abc_FrameGiaOutputMiniLut( Abc_Frame_t * pAbc );
 extern ABC_DLL char * Abc_FrameGiaOutputMiniLutAttr( Abc_Frame_t * pAbc, void * pMiniLut );
 extern ABC_DLL int *  Abc_FrameReadMiniLutSwitching( Abc_Frame_t * pAbc );
+extern ABC_DLL int *  Abc_FrameReadMiniLutSwitching2( Abc_Frame_t * pAbc, int nRandPiFactor );
 extern ABC_DLL int *  Abc_FrameReadMiniLutSwitchingPo( Abc_Frame_t * pAbc );
 
 // procedures to input/output NDR data-structure
@@ -105,6 +106,9 @@ extern ABC_DLL int *  Abc_FrameReadBoxes( Abc_Frame_t * pAbc );
 // procedures to access verifization status and a counter-example
 extern ABC_DLL int    Abc_FrameReadProbStatus( Abc_Frame_t * pAbc );   
 extern ABC_DLL void * Abc_FrameReadCex( Abc_Frame_t * pAbc );    
+
+// procedure to set retiming data
+extern ABC_DLL void   Abc_FrameSetRetimingData( Abc_Frame_t * pAbc, int * pRst, int * pSet, int * pEna, int nRegs );
 
 // procedure to return sequential equivalences
 extern ABC_DLL int *  Abc_FrameReadMiniAigEquivClasses( Abc_Frame_t * pAbc );

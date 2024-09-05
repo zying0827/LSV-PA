@@ -1,8 +1,12 @@
-on: [push]
+name: Build Posix CMake
+
+on:
+  push:
+  pull_request:
 
 jobs:
 
-  build-posix:
+  build-posix-cmake:
     strategy:
       matrix:
         os: [macos-11, ubuntu-latest]
@@ -39,6 +43,10 @@ jobs:
     - name: Build CMake
       run: |
         cmake --build build
+
+    - name: Run Unit Tests
+      run: |
+        ctest --output-on-failure
 
     - name: Test Executable
       run: |

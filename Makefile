@@ -5,7 +5,8 @@ AR   := ar
 LD   := $(CXX)
 
 MSG_PREFIX ?=
-ABCSRC = .
+ABCSRC ?= .
+VPATH = $(ABCSRC)
 
 $(info $(MSG_PREFIX)Using CC=$(CC))
 $(info $(MSG_PREFIX)Using CXX=$(CXX))
@@ -19,7 +20,7 @@ MODULES := \
 	$(wildcard src/ext*) \
 	src/base/abc src/base/abci src/base/cmd src/base/io src/base/main src/base/exor \
 	src/base/ver src/base/wlc src/base/wln src/base/acb src/base/bac src/base/cba src/base/pla src/base/test \
-	src/map/mapper src/map/mio src/map/super src/map/if \
+	src/map/mapper src/map/mio src/map/super src/map/if src/map/if/acd \
 	src/map/amap src/map/cov src/map/scl src/map/mpm \
 	src/misc/extra src/misc/mvc src/misc/st src/misc/util src/misc/nm \
 	src/misc/vec src/misc/hash src/misc/tim src/misc/bzlib src/misc/zlib \
@@ -41,7 +42,7 @@ default: $(PROG)
 ARCHFLAGS_EXE ?= ./arch_flags
 
 $(ARCHFLAGS_EXE) : arch_flags.c
-	$(CC) arch_flags.c -o $(ARCHFLAGS_EXE)
+	$(CC) $< -o $(ARCHFLAGS_EXE)
 
 INCLUDES += -I$(ABCSRC)/src
 
@@ -137,11 +138,11 @@ endif
 
 # LIBS := -ldl -lrt
 LIBS += -lm
-ifneq ($(OS), FreeBSD)
+ifneq ($(OS), $(filter $(OS), FreeBSD OpenBSD NetBSD))
   LIBS += -ldl
 endif
 
-ifneq ($(findstring Darwin, $(shell uname)), Darwin)
+ifneq ($(OS), $(filter $(OS), FreeBSD OpenBSD NetBSD Darwin))
    LIBS += -lrt
 endif
 
@@ -151,7 +152,7 @@ ifdef ABC_USE_LIBSTDCXX
 endif
 
 $(info $(MSG_PREFIX)Using CFLAGS=$(CFLAGS))
-CXXFLAGS += $(CFLAGS)
+CXXFLAGS += $(CFLAGS) -std=c++17 -fno-exceptions
 
 SRC  :=
 GARBAGE := core core.* *.stackdump ./tags $(PROG) arch_flags
@@ -173,26 +174,32 @@ DEP := $(OBJ:.o=.d)
 # implicit rules
 
 %.o: %.c
+	@mkdir -p $(dir $@)
 	@echo "$(MSG_PREFIX)\`\` Compiling:" $(LOCAL_PATH)/$<
 	$(VERBOSE)$(CC) -c $(OPTFLAGS) $(INCLUDES) $(CFLAGS) $< -o $@
 
 %.o: %.cc
+	@mkdir -p $(dir $@)
 	@echo "$(MSG_PREFIX)\`\` Compiling:" $(LOCAL_PATH)/$<
 	$(VERBOSE)$(CXX) -c $(OPTFLAGS) $(INCLUDES) $(CXXFLAGS) $< -o $@
 
 %.o: %.cpp
+	@mkdir -p $(dir $@)
 	@echo "$(MSG_PREFIX)\`\` Compiling:" $(LOCAL_PATH)/$<
 	$(VERBOSE)$(CXX) -c $(OPTFLAGS) $(INCLUDES) $(CXXFLAGS) $< -o $@
 
 %.d: %.c
+	@mkdir -p $(dir $@)
 	@echo "$(MSG_PREFIX)\`\` Generating dependency:" $(LOCAL_PATH)/$<
 	$(VERBOSE)$(ABCSRC)/depends.sh "$(CC)" `dirname $*.c` $(OPTFLAGS) $(INCLUDES) $(CFLAGS) $< > $@
 
 %.d: %.cc
+	@mkdir -p $(dir $@)
 	@echo "$(MSG_PREFIX)\`\` Generating dependency:" $(LOCAL_PATH)/$<
 	$(VERBOSE)$(ABCSRC)/depends.sh "$(CXX)" `dirname $*.cc` $(OPTFLAGS) $(INCLUDES) $(CXXFLAGS) $< > $@
 
 %.d: %.cpp
+	@mkdir -p $(dir $@)
 	@echo "$(MSG_PREFIX)\`\` Generating dependency:" $(LOCAL_PATH)/$<
 	$(VERBOSE)$(ABCSRC)/depends.sh "$(CXX)" `dirname $*.cpp` $(OPTFLAGS) $(INCLUDES) $(CXXFLAGS) $< > $@
 
@@ -206,7 +213,10 @@ depend: $(DEP)
 
 clean:
 	@echo "$(MSG_PREFIX)\`\` Cleaning up..."
-	$(VERBOSE)rm -rvf $(PROG) lib$(PROG).a $(OBJ) $(GARBAGE) $(OBJ:.o=.d)
+	$(VERBOSE)rm -rvf $(PROG) lib$(PROG).a
+	$(VERBOSE)rm -rvf $(OBJ)
+	$(VERBOSE)rm -rvf $(GARBAGE)
+	$(VERBOSE)rm -rvf $(OBJ:.o=.d)
 
 tags:
 	etags `find . -type f -regex '.*\.\(c\|h\)'`

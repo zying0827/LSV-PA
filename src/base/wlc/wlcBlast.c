@@ -20,6 +20,8 @@
 
 #include "wlc.h"
 #include "misc/tim/tim.h"
+#include "base/main/main.h"
+#include "base/cmd/cmd.h"
 
 ABC_NAMESPACE_IMPL_START
 
@@ -891,7 +893,7 @@ void Wlc_BlastReduceMatrix( Gia_Man_t * pNew, Vec_Wec_t * vProds, Vec_Wec_t * vL
 {
     Vec_Int_t * vLevel, * vProd;
     int i, NodeS, NodeC, LevelS, LevelC, Node1, Node2, Node3, Level1, Level2, Level3;
-    int nSize = Vec_WecSize(vProds);
+    int nSize = Vec_WecSize(vProds), nFAs = Vec_WecSize(vProds), nHAs = 0;
     assert( nSize == Vec_WecSize(vLevels) );
     for ( i = 0; i < nSize; i++ )
     {
@@ -911,6 +913,12 @@ void Wlc_BlastReduceMatrix( Gia_Man_t * pNew, Vec_Wec_t * vProds, Vec_Wec_t * vL
             Level2 = Vec_IntPop( vLevel );
             Level3 = Vec_IntPop( vLevel );
 
+            int nInputs = (Node1 > 1) + (Node2 > 1) + (Node3 > 1);
+            if ( nInputs == 3 )
+                nFAs++;
+            else if ( nInputs == 2 )
+                nHAs++;            
+
             Wlc_BlastFullAdder( pNew, Node1, Node2, Node3, &NodeC, &NodeS );
             LevelS = Abc_MaxInt( Abc_MaxInt(Level1, Level2), Level3 ) + 2;
             LevelC = LevelS - 1;
@@ -929,7 +937,7 @@ void Wlc_BlastReduceMatrix( Gia_Man_t * pNew, Vec_Wec_t * vProds, Vec_Wec_t * vL
     {
         vProd  = Vec_WecEntry( vProds, i );
         while ( Vec_IntSize(vProd) < 2 )
-            Vec_IntPush( vProd, 0 );
+            Vec_IntPush( vProd, 0 ), nFAs--, nHAs++;
         assert( Vec_IntSize(vProd) == 2 );
     }
 //    Vec_WecPrint( vProds, 0 );
@@ -950,6 +958,7 @@ void Wlc_BlastReduceMatrix( Gia_Man_t * pNew, Vec_Wec_t * vProds, Vec_Wec_t * vL
         Wlc_BlastAdderCLA( pNew, Vec_IntArray(vRes), Vec_IntArray(vLevel), Vec_IntSize(vRes), fSigned, 0 );
     else
         Wlc_BlastAdder( pNew, Vec_IntArray(vRes), Vec_IntArray(vLevel), Vec_IntSize(vRes), 0 );
+    //printf( "Created %d-bit %d-input AT with %d FAs and %d HAs.\n", Vec_WecSize(vProds), Vec_WecSizeSize(vProds), nFAs, nHAs );     
 }
 
 int Wlc_BlastAddLevel( Gia_Man_t * pNew, int Start )
@@ -1049,8 +1058,7 @@ void Wlc_BlastReduceMatrix2( Gia_Man_t * pNew, Vec_Wec_t * vProds, Vec_Int_t * v
     Vec_IntFree( vTemp );
 }
 
-
-void Wlc_BlastMultiplier3( Gia_Man_t * pNew, int * pArgA, int * pArgB, int nArgA, int nArgB, Vec_Int_t * vRes, int fSigned, int fCla, Vec_Wec_t ** pvProds )
+void Wlc_BlastMultiplier3( Gia_Man_t * pNew, int * pArgA, int * pArgB, int nArgA, int nArgB, Vec_Int_t * vRes, int fSigned, int fCla, Vec_Wec_t ** pvProds, int fVerbose )
 {
     Vec_Wec_t * vProds  = Vec_WecStart( nArgA + nArgB );
     Vec_Wec_t * vLevels = Vec_WecStart( nArgA + nArgB );
@@ -1064,13 +1072,17 @@ void Wlc_BlastMultiplier3( Gia_Man_t * pNew, int * pArgA, int * pArgB, int nArgA
         }
     if ( fSigned )
     {
-        Vec_WecPush( vProds,  nArgA, 1 );
-        Vec_WecPush( vLevels, nArgA, 0 );
+        Vec_WecPush( vProds,  nArgB-1, 1 );
+        Vec_WecPush( vLevels, nArgB-1, 0 );
+
+        Vec_WecPush( vProds,  nArgA-1, 1 );
+        Vec_WecPush( vLevels, nArgA-1, 0 );
 
         Vec_WecPush( vProds,  nArgA+nArgB-1, 1 );
         Vec_WecPush( vLevels, nArgA+nArgB-1, 0 );
     }
-
+    if ( fVerbose )
+        Vec_WecPrint( vProds, 0 );
     if ( pvProds )
         *pvProds = Vec_WecDup(vProds);
     else
@@ -1117,7 +1129,7 @@ void Wlc_BlastDecoder( Gia_Man_t * pNew, int * pNum, int nNum, Vec_Int_t * vTmp,
         Vec_IntPush( vRes, iMint );
     }
 }
-void Wlc_BlastBooth( Gia_Man_t * pNew, int * pArgA, int * pArgB, int nArgA, int nArgB, Vec_Int_t * vRes, int fSigned, int fCla, Vec_Wec_t ** pvProds )
+void Wlc_BlastBooth( Gia_Man_t * pNew, int * pArgA, int * pArgB, int nArgA, int nArgB, Vec_Int_t * vRes, int fSigned, int fCla, Vec_Wec_t ** pvProds, int fVerbose )
 {
     Vec_Wec_t * vProds  = Vec_WecStart( nArgA + nArgB + 3 );
     Vec_Wec_t * vLevels = Vec_WecStart( nArgA + nArgB + 3 );
@@ -1152,6 +1164,7 @@ void Wlc_BlastBooth( Gia_Man_t * pNew, int * pArgA, int * pArgB, int nArgA, int 
             int Prev = i ? pArgA[i-1] : 0;
             int Part = Gia_ManHashOr( pNew, Gia_ManHashAnd(pNew, One, This), Gia_ManHashAnd(pNew, Two, Prev) );
             pp = Gia_ManHashXor( pNew, Part, Neg );
+            if ( fVerbose ) printf( "%4d = PP(%5d %5d  %5d %5d %5d)\n", pp, Prev, This, Q2jM1, Q2j, Q2jP1 );
             if ( pp == 0 || (fSigned && i == nArgA) )
                 continue;
             if ( pp )
@@ -1194,7 +1207,12 @@ void Wlc_BlastBooth( Gia_Man_t * pNew, int * pArgA, int * pArgB, int nArgA, int 
         Vec_WecPush( vProds,  k, Neg );
         Vec_WecPush( vLevels, k, 0 );
     }
-    //Vec_WecPrint( vProds, 0 );
+    //Vec_WecShrink( vProds,  nArgA + nArgB );
+    //Vec_WecShrink( vLevels, nArgA + nArgB );   
+    if ( fVerbose )
+        Vec_WecPrint( vProds, 0 );
+    if ( fVerbose ) 
+        printf( "Total PPs = %d.\n", Vec_WecSizeSize(vProds) );
     //Wlc_BlastPrintMatrix( pNew, vProds, 1 );
     //printf( "Cutoff ID for partial products = %d.\n", Gia_ManObjNum(pNew) );
     if ( pvProds )
@@ -1829,12 +1847,12 @@ Gia_Man_t * Wlc_NtkBitBlast( Wlc_Ntk_t * p, Wlc_BstPar_t * pParIn )
                 int nRangeMax = Abc_MaxInt(nRange0, nRange1);
                 int * pArg0 = Wlc_VecLoadFanins( vTemp0, pFans0, nRange0, nRangeMax, fSigned );
                 int * pArg1 = Wlc_VecLoadFanins( vTemp1, pFans1, nRange1, nRangeMax, fSigned );
-                if ( Wlc_NtkCountConstBits(pArg0, nRangeMax) < Wlc_NtkCountConstBits(pArg1, nRangeMax) )
+                if ( nRange0 == nRange1 && Wlc_NtkCountConstBits(pArg0, nRangeMax) < Wlc_NtkCountConstBits(pArg1, nRangeMax) )
                     ABC_SWAP( int *, pArg0, pArg1 );
                 if ( pPar->fBooth )
-                    Wlc_BlastBooth( pNew, pArg0, pArg1, nRange0, nRange1, vRes, fSigned, pPar->fCla, NULL );
+                    Wlc_BlastBooth( pNew, pArg0, pArg1, nRange0, nRange1, vRes, fSigned, pPar->fCla, NULL, pParIn->fVerbose );
                 else if ( pPar->fCla )
-                    Wlc_BlastMultiplier3( pNew, pArg0, pArg1, nRange0, nRange1, vRes, Wlc_ObjIsSignedFanin01(p, pObj), pPar->fCla, NULL );
+                    Wlc_BlastMultiplier3( pNew, pArg0, pArg1, nRange0, nRange1, vRes, Wlc_ObjIsSignedFanin01(p, pObj), pPar->fCla, NULL, pParIn->fVerbose );
                 else
                     Wlc_BlastMultiplier( pNew, pArg0, pArg1, nRangeMax, nRangeMax, vTemp2, vRes, fSigned );
                     //Wlc_BlastMultiplierC( pNew, pArg0, pArg1, nRangeMax, nRangeMax, vTemp2, vRes, fSigned );
@@ -2665,6 +2683,112 @@ Vec_Int_t * Wlc_ComputePerm( Wlc_Ntk_t * pNtk, int nPis )
         Vec_IntPush( vPerm, i );
     //Vec_IntPrint( vPerm );
     return vPerm;
+}
+
+/**Function*************************************************************
+
+  Synopsis    []
+
+  Description []
+               
+  SideEffects []
+
+  SeeAlso     []
+
+***********************************************************************/
+void Wlc_TransferPioNames( Wlc_Ntk_t * p, Gia_Man_t * pNew )
+{
+    int fSkipBitRange = 0;
+    Wlc_Obj_t * pObj; int i, k;
+    Vec_PtrFreeP( &pNew->vNamesIn );
+    Vec_PtrFreeP( &pNew->vNamesOut );
+    pNew->vNamesIn = Vec_PtrAlloc( Gia_ManPiNum(pNew) );
+    pNew->vNamesOut = Vec_PtrAlloc( Gia_ManPoNum(pNew) );
+    // create input names
+    Wlc_NtkForEachCi( p, pObj, i )
+    if ( Wlc_ObjIsPi(pObj) )
+    {
+        char * pName = Wlc_ObjName(p, Wlc_ObjId(p, pObj));
+        int nRange = Wlc_ObjRange( pObj );
+        if ( fSkipBitRange && nRange == 1 )
+            Vec_PtrPush( pNew->vNamesIn, Abc_UtilStrsav(pName) );
+        else
+            for ( k = 0; k < nRange; k++ )
+            {
+                char Buffer[1000];
+                sprintf( Buffer, "%s[%d]", pName, pObj->Beg < pObj->End ? pObj->Beg+k : pObj->Beg-k );
+                Vec_PtrPush( pNew->vNamesIn, Abc_UtilStrsav(Buffer) );
+                //printf( "Writing %s\n", Buffer );
+            }
+    }    
+    // add real primary outputs
+    Wlc_NtkForEachCo( p, pObj, i )
+    if ( Wlc_ObjIsPo(pObj) )
+    {
+        char * pName = Wlc_ObjName(p, Wlc_ObjId(p, pObj));
+        int nRange = Wlc_ObjRange( pObj );
+        if ( fSkipBitRange && nRange == 1 )
+            Vec_PtrPush( pNew->vNamesOut, Abc_UtilStrsav(pName) );
+        else
+            for ( k = 0; k < nRange; k++ )
+            {
+                char Buffer[1000];
+                sprintf( Buffer, "%s[%d]", pName, pObj->Beg < pObj->End ? pObj->Beg+k : pObj->Beg-k );
+                Vec_PtrPush( pNew->vNamesOut, Abc_UtilStrsav(Buffer) );
+            }
+    }
+    if ( Vec_PtrSize(pNew->vNamesIn) != Gia_ManPiNum(pNew) ) 
+        printf( "The number of input bits (%d) does not match the number of primary inputs (%d) in the current AIG.\n", Vec_PtrSize(pNew->vNamesIn), Gia_ManPiNum(pNew) );
+    if ( Vec_PtrSize(pNew->vNamesOut) != Gia_ManPoNum(pNew) ) 
+        printf( "The number of output bits (%d) does not match the number of primary inputs (%d) in the current AIG.\n", Vec_PtrSize(pNew->vNamesOut), Gia_ManPoNum(pNew) );
+    if ( Vec_PtrSize(pNew->vNamesIn) != Gia_ManPiNum(pNew) || Vec_PtrSize(pNew->vNamesOut) != Gia_ManPoNum(pNew) ) 
+    {
+        Vec_PtrFreeP( &pNew->vNamesIn );
+        Vec_PtrFreeP( &pNew->vNamesOut );
+    }
+    else
+        printf( "Successfully transferred the primary input/output names from the word-level design to the current AIG.\n" );
+}
+    
+/**Function*************************************************************
+
+  Synopsis    []
+
+  Description []
+               
+  SideEffects []
+
+  SeeAlso     []
+
+***********************************************************************/
+void Wlc_MultBlastFileGen( int a, int b, int s )
+{
+    FILE * pFile = fopen( "_test13_.v", "wb" );
+    fprintf( pFile, "module test ( a, b, z );\n" );
+    fprintf( pFile, "input %s [%d:0] a;\n", s ? "signed":"", a-1 );
+    fprintf( pFile, "input %s [%d:0] b;\n", s ? "signed":"", b-1 );
+    fprintf( pFile, "output %s [%d:0] z;\n", s ? "signed":"", a+b-1 );
+    fprintf( pFile, "assign z = a * b;\n" );
+    fprintf( pFile, "endmodule\n" );    
+    fclose( pFile );
+}
+void Wlc_MultBlastTest()
+{
+    char * Command = "%read _test13_.v; %blast; &ps; &w 1.aig;  %read _test13_.v; %blast -b; &ps; &w 2.aig; cec -n 1.aig 2.aig";
+    int a, b, s, Iters = 0;
+    for ( a = 1; a < 8; a++ )
+    for ( b = 1; b < 8; b++ )
+    for ( s = 0; s < 2; s++ )
+    {
+        Wlc_MultBlastFileGen( a, b, s );
+        if ( Cmd_CommandExecute( Abc_FrameGetGlobalFrame(), Command ) )
+        {
+            fprintf( stdout, "Cannot execute command \"%s\".\n", Command );
+            return;
+        }
+        Iters++;
+    }
+    printf( "Finished %d iterations.\n", Iters );
 }
 
 ////////////////////////////////////////////////////////////////////////

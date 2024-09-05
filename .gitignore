@@ -13,6 +13,7 @@ lib/m114*
 lib/bip*
 docs/
 .vscode/
+.cache/
 
 src/xxx/
 src/aig/au/
@@ -207,3 +208,4 @@ Temporary Items
 
 # Local History for Visual Studio Code
 .history/
+abc.history

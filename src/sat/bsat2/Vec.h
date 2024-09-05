@@ -24,8 +24,10 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include <assert.h>
 #include <new>
 
-#include "IntTypes.h"
-#include "XAlloc.h"
+#include "sat/bsat2/IntTypes.h"
+#include "sat/bsat2/XAlloc.h"
+
+ABC_NAMESPACE_CXX_HEADER_START
 
 namespace Minisat {
 
@@ -91,13 +93,16 @@ public:
     void moveTo(vec<T>& dest) { dest.clear(true); dest.data = data; dest.sz = sz; dest.cap = cap; data = NULL; sz = 0; cap = 0; }
 };
 
-
 template<class T>
 void vec<T>::capacity(int min_cap) {
     if (cap >= min_cap) return;
     int add = imax((min_cap - cap + 1) & ~1, ((cap >> 1) + 2) & ~1);   // NOTE: grow by approximately 3/2
     if (add > INT_MAX - cap || (((data = (T*)::realloc(data, (cap += add) * sizeof(T))) == NULL) && errno == ENOMEM))
+#ifdef __wasm
+        abort();
+#else
         throw OutOfMemoryException();
+#endif
  }
 
 
@@ -126,5 +131,7 @@ void vec<T>::clear(bool dealloc) {
 
 //=================================================================================================
 }
+
+ABC_NAMESPACE_CXX_HEADER_END
 
 #endif
