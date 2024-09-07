@@ -1,12 +1,12 @@
 ## Programming Assignment 1
 
 ###
-Exercises 1-3 are due on 9/17 23:59; Exercise 4 is due on 10/1 23:59.  
+Exercises 1-3 are due on 9/22 23:59; Exercise 4 is due on 10/6 23:59.  
 Submit Exercises 1 and 4 on GitHub, and Exercises 2 and 3 on NTU Cool.
 
 ### Submission Guidelines
-For Exercises 2 and 3, please put the required items under "lsv/pa1/", i.e., this folder. 
-Compress the "lsv/pa1/" folder as a single *.tgz* file and submit it on NTU cool. For Exercise 4, please develop your code under "src/ext-lsv". 
+For Exercises 2 and 3, please put the required items under "`lsv/pa1/`", i.e., this folder. 
+Compress the "`lsv/pa1/`" folder as a single *.tgz* file and submit it on NTU cool. For Exercise 4, please develop your code under "src/ext-lsv". 
 You are asked to submit your assignments by creating pull requests to your own branch. 
 To avoid plagiarism, please push files and create pull requests at the last moment before the deadline. 
 Please see the [GitHub page](https://github.com/NTU-ALComLab/LSV-PA) for more details.
@@ -21,9 +21,10 @@ If you cannot find your own branch or your branch is inconsistent with the maste
 Send a pull request to the master branch after you finish it. Note that this is the only time you send a pull request to the master branch. In the following, you are asked to send pull requests to your own branch.
 
 ### 2. [Using ABC] (10%)
-(a) Create a BLIF file named *mul.blif* to represent a two-bit unsigned multiplier Y = A * B, where A = (a1 a0) and B = (b1 b0) are two-bit unsigned integers, and Y = (y3 y2 y1 y0) is a four-bit unsigned integer. You may refer to the [BLIF manual](http://www.eecs.berkeley.edu/~alanmi/publications/other/blif.pdf).  
+(a) Create a BLIF file named "`comp.blif`" to represent a 5 to 3 compressor with 5 inputs x0, x1, x2, x3, and x4. The output Y = (y2 y1 y0) is a 3-bit unsigned integer that represents the number of 1s in the inputs. 
+For example, when inputs are 10011, output Y = (011) because there are three 1s in 10011.
 
-(b) Perform the following steps to practice using ABC with the two-bit unsigned multiplier example. Screenshot the results after running the commands and put them in your report.
+(b) Perform the following steps to practice using ABC with your "`comp.blif`". Screenshot the results after running the commands and put them in your report.
  1. read the BLIF file into ABC (command `read`)
  2. check statistics (command `print_stats`)
  3. visualize the network structure (command `show`)
@@ -47,53 +48,46 @@ collapsed BDD (by command `collapse`)
 In this problem, you are asked to write your own procedures and integrate them into ABC, so that your self-defined commands can be executed within ABC. You may need to trace some source codes in ABC to understand the data structures and function usages.
 
 Hint 1: You may refer to *src/base/abc/abc.h* to find definitions of some important variables, functions, iterators, etc.  
-Hint 2: You may use the command `grep -R <keyword>` to find whether a certain keyword appears in the source codes.  
-Hint 3: You may refer to the [CUDD package website](https://web.mit.edu/sage/export/tmp/y/usr/share/doc/polybori/cudd/cuddAllDet.html) to find some useful BDD operations.
+Hint 2: You may use the command "`grep -R <keyword>`" or your code editer to find whether a certain keyword appears in the source code. It can be very helpful seeing how these function or data structure are used in the source code.
 
-#### 4.1 [Function simulation with BDD]
-Write a procedure in ABC to do simulations for a given BDD and an input pattern. Integrate this procedure into ABC (under "src/ext-lsv/"), so that after reading in a circuit (by command `read`) and transforming it into BDD (by command `collapse`), running the command `lsv_sim_bdd` would invoke your code. The command should have the following format.
+#### 4.1 [k-feasible Cut Enumeration]
+Write a procedure in the ABC environment to enumerate all k-feasible cuts of every node on an AIG. Integrate this procedure into ABC (under `src/ext-lsv/`)
+so that after reading in a circuit (by command `read`) and transforming it into AIG (by command `strash`), running the command `lsv printcut` would
+invoke your code and prints the result.
+The command should have the following format.
 ```
-lsv_sim_bdd <input_pattern>
+lsv_printcut <k>
 ```
-The output should have the following format.
+Where the parameter `<k>` specifies k-feasible cuts. We will use k between 3 to 6 to test your command with different designs.
+The output should have the following format
 ```
-<po name 1>: <value>
-<po name 2>: <value>
+<node_1>: <cut_1>
+<node_1>: <cut_2>
+...
+<node_2>: <cut_1>
 ...
 ```
-For example, suppose the BDD represents the function $y = a + b + c$. The command and the output should look like:
-```
-abc 01> lsv_sim_bdd 000
-y: 0
-abc 01> lsv_sim_bdd 010
-y: 1
-```
-To achieve this function, you can use the BDD cofactor operator. Let $f$ be a Boolean function and $a_i$ be an input variable. The $cofactor(f, a_i)$ operation substitutes all appearances of $a_i$ in $f$ by 1, and the $cofactor(f, a_i')$ operation substitutes all appearances of $a_i$ in $f$ by 0. To decide the function output of a given input pattern, you can do the cofactor operation against all input variables and compare the result to constant 1.
+where `<node_i>` is a node ID, and each `<cut_j>` after `<node_i>:` is a k-feasible cut for `<node_i>`.
+`<cut_j>` should be a sequence of node IDs, sorted ascendently, separated by space characters.
 
-#### 4.2 [Parallel function simulation with AIG]
-Write a procedure in ABC to do 32-bit parallel simulations for a given AIG and some input patterns. Integrate this procedure into ABC (under "src/ext-lsv/"), so that after reading in a circuit (by command `read`) and transforming it into AIG (by command `strash`), running the command `lsv_sim_aig` would invoke your code.
+For example, given the following AIG,
+<iframe src="example.pdf" width="50%" height="500" frameborder="0" />
 
-The patterns under simulation are written in a file, in which each line represents an input pattern, and each bit in a line represents the value of an input variable. The variable order is the same as defined in the BLIF file. The command should have the following format.
+a command to compute 3-feasible cuts and the corresponding output should look like:
 ```
-lsv_sim_aig <input_pattern_file>
-```
-The output should have the following format.
-```
-<po name 1>: <value>
-<po name 2>: <value>
-...
-```
-For example, suppose the AIG represents the function $y = a + b + c$, and the content in *demo.in* is as follows.
-```
-000
-001
-110
-111
-```
-Then the command and the output should look like:
-```
-abc 01> lsv_sim_aig demo.in
-y: 0111
+abc 01> lsv_printcut 3
+1: 1
+2: 2
+3: 3
+4: 4
+4: 1 2
+5: 5
+5: 2 3
+6: 6
+6: 4 5
+6: 1 2 5
+6: 2 3 4
+6: 1 2 3
 ```
 
 ***Notice.*** For problems 4.1 and 4.2, you may see some built-in functions to perform functional simulations on BDD or AIG. 
