@@ -8,7 +8,8 @@ Submit Exercises 1 and 4 on GitHub, and Exercises 2 and 3 on NTU Cool.
 For Exercises 2 and 3, please put the required items under "`lsv/pa1/`", i.e., this folder. 
 Compress the "`lsv/pa1/`" folder as a single *.tgz* file and submit it on NTU cool. For Exercise 4, please develop your code under "src/ext-lsv". 
 You are asked to submit your assignments by creating pull requests to your own branch. 
-To avoid plagiarism, please push files and create pull requests at the last moment before the deadline. 
+To avoid plagiarism, please push files and create
+pull requests between 21:00 and 23:59 on the due datelease push files and create
 Please see the [GitHub page](https://github.com/NTU-ALComLab/LSV-PA) for more details.
 
 ### 1. [Getting Familiar with GitHub] (0%)
@@ -22,7 +23,7 @@ Send a pull request to the master branch after you finish it. Note that this is 
 
 ### 2. [Using ABC] (10%)
 (a) Create a BLIF file named "`comp.blif`" to represent a 5 to 3 compressor with 5 inputs x0, x1, x2, x3, and x4. The output Y = (y2 y1 y0) is a 3-bit unsigned integer that represents the number of 1s in the inputs. 
-For example, when inputs are 10011, output Y = (011) because there are three 1s in 10011.
+For example, when inputs are 10011, output Y = (011), i.e. binary number of 3, because there are three 1s in 10011.
 
 (b) Perform the following steps to practice using ABC with your "`comp.blif`". Screenshot the results after running the commands and put them in your report.
  1. read the BLIF file into ABC (command `read`)
@@ -42,13 +43,13 @@ structurally hashed AIG (by command `strash`)
 2. logic network in BDD (by command `bdd`) vs.
 collapsed BDD (by command `collapse`)
 
-(b) Given a structurally hashed AIG, find a sequence of ABC commands to convert it to a logic network with node function expressed in sum-of-products (SOP). Use the two-bit unsigned multiplier example to test your command sequence, screenshot the results, and put them in your report.
+(b) Given a structurally hashed AIG, find a sequence of ABC commands to convert it to a logic network with node function expressed in sum-of-products (SOP). Use your `comp.blif` to test your command sequence, screenshot the results, and put them in your report.
 
 ### 4. [Programming ABC] (80%)  
 In this problem, you are asked to write your own procedures and integrate them into ABC, so that your self-defined commands can be executed within ABC. You may need to trace some source codes in ABC to understand the data structures and function usages.
 
 Hint 1: You may refer to *src/base/abc/abc.h* to find definitions of some important variables, functions, iterators, etc.  
-Hint 2: You may use the command "`grep -R <keyword>`" or your code editer to find whether a certain keyword appears in the source code. It can be very helpful seeing how these function or data structure are used in the source code.
+Hint 2: You may use the command "`grep -R <keyword>`" or your code editer to find whether a certain keyword appears in the source code. It can be very helpful seeing how these functions or data structure are used in the source code.
 
 #### 4.1 [k-feasible Cut Enumeration]
 Write a procedure in the ABC environment to enumerate all k-feasible cuts of every node on an AIG. Integrate this procedure into ABC (under `src/ext-lsv/`)
@@ -58,7 +59,7 @@ The command should have the following format.
 ```
 lsv_printcut <k>
 ```
-Where the parameter `<k>` specifies k-feasible cuts. We will use k between 3 to 6 to test your command with different designs.
+Where the parameter `<k>` specifies k-feasible cuts, for $3\leq k\leq 6$ to test your command with different designs.
 The output should have the following format
 ```
 <node_1>: <cut_1>
@@ -67,7 +68,7 @@ The output should have the following format
 <node_2>: <cut_1>
 ...
 ```
-where `<node_i>` is a node ID, and each `<cut_j>` after `<node_i>:` is a k-feasible cut for `<node_i>`.
+where `<node_i>` is a node ID, and each `<cut_j>` after `<node_i>` is a k-feasible cut for `<node_i>`.
 `<cut_j>` should be a sequence of node IDs, sorted ascendently, separated by space characters.
 
 For example, given the following AIG,
@@ -90,12 +91,12 @@ abc 01> lsv_printcut 3
 6: 1 2 3
 ```
 
-***Notice.*** For problems 4.1 and 4.2, you may see some built-in functions to perform functional simulations on BDD or AIG. 
+***Notice.*** Note that there may be some built-in functions in ABC computing cut enumeration. 
 You are allowed to refer to them, but you have to write your own procedures. 
 Directly calling or copying from the built-in functions will be viewed as plagiarism.
 
 
 ### Files to Submit
 1. The BLIF file in problem 2(a).
-2. The PDF report named report.pdf.
-3. The source codes in problem 4.
+2. The PDF report named `report.pdf`.
+3. The source codes in problem 4 (by pull request).
