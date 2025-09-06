@@ -1,4 +1,4 @@
-# LSV-PA, Fall 2023
+# LSV-PA, Fall 2025
 This is a repository to host programming assignments of the course **Logic Synthesis and Verification** at National Taiwan University.
 It is forked from the repository [ABC](https://github.com/berkeley-abc/abc) of UC Berkeley.
 
@@ -23,18 +23,17 @@ The benefit of this method is that you can push your code during the development
 The drawback is again you need to create a pull request close to the deadline, as PRs are visible to everyone.
 The detailed steps are documented [here](./private-fork.md).
 
-
 ## Participants
-We recommend students to register their student IDs and GitHub accounts in this [table](./lsv/admin/participants-id.csv).
+Please register your student IDs and GitHub accounts in this [table](./lsv/admin/participants-id.csv).
 
 ## Assignments
 ### [PA1](./lsv/pa1/README.md): Functional simulation   
 Submission deadline:
-- Exercises 1-3: 2023/09/17 23:59
-- Exercises 4: 2023/10/01 23:59
+- Exercises 1-3: 2023/09/21 23:59
+- Exercises 4: 2023/10/05 23:59
 
 ## Contact
-TA: Tian-Fu Chen (d11k42001@ntu.edu.tw)
+TA: Kuo-Wei Ho (f11943109@ntu.edu.tw)
 
 For questions, you are encouraged to open an [issue](https://github.com/NTU-ALComLab/LSV-PA/issues).
 As other students might have the same questions, discussing in an issue will benefit everyone.
