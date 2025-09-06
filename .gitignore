@@ -30,6 +30,7 @@ src/aig/ddb/
 *.plg
 
 *.zip
+*.DS_Store
 
 abcspaceext.dsw
 abcext.dsp

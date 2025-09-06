@@ -45,6 +45,7 @@ struct Gia_Cut_t_
     unsigned        nTreeLeaves  : 28;         // tree leaves
     unsigned        nLeaves      :  4;         // leaf count
     int             pLeaves[GIA_MAX_CUTSIZE];  // leaves
+    float           CostF;
 };
 
 typedef struct Gia_Sto_t_ Gia_Sto_t; 
@@ -281,10 +282,18 @@ static inline int Gia_CutSetLastCutIsContained( Gia_Cut_t ** pCuts, int nCuts )
   SeeAlso     []
 
 ***********************************************************************/
-static inline int Gia_CutCompare( Gia_Cut_t * pCut0, Gia_Cut_t * pCut1 )
+static inline int Gia_CutCompare2( Gia_Cut_t * pCut0, Gia_Cut_t * pCut1 )
 {
     if ( pCut0->nTreeLeaves < pCut1->nTreeLeaves )  return -1;
     if ( pCut0->nTreeLeaves > pCut1->nTreeLeaves )  return  1;
+    if ( pCut0->nLeaves     < pCut1->nLeaves )      return -1;
+    if ( pCut0->nLeaves     > pCut1->nLeaves )      return  1;
+    return 0;
+}
+static inline int Gia_CutCompare( Gia_Cut_t * pCut0, Gia_Cut_t * pCut1 )
+{
+    if ( pCut0->CostF       > pCut1->CostF )         return -1;
+    if ( pCut0->CostF       < pCut1->CostF )         return  1;
     if ( pCut0->nLeaves     < pCut1->nLeaves )      return -1;
     if ( pCut0->nLeaves     > pCut1->nLeaves )      return  1;
     return 0;
@@ -432,6 +441,13 @@ static inline int Gia_CutTreeLeaves( Gia_Sto_t * p, Gia_Cut_t * pCut )
         Cost += Vec_IntEntry( p->vRefs, pCut->pLeaves[i] ) == 1;
     return Cost;
 }
+static inline float Gia_CutGetCost( Gia_Sto_t * p, Gia_Cut_t * pCut )
+{
+    int i, Cost = 0;
+    for ( i = 0; i < (int)pCut->nLeaves; i++ )
+        Cost += Vec_IntEntry( p->vRefs, pCut->pLeaves[i] );
+    return (float)Cost / Abc_MaxInt(1, pCut->nLeaves);
+}
 static inline int Gia_StoPrepareSet( Gia_Sto_t * p, int iObj, int Index )
 {
     Vec_Int_t * vThis = Vec_WecEntry( p->vCuts, iObj );
@@ -445,6 +461,7 @@ static inline int Gia_StoPrepareSet( Gia_Sto_t * p, int iObj, int Index )
         pCutTemp->iFunc = pCut[pCut[0]+1];
         pCutTemp->Sign = Gia_CutGetSign( pCutTemp );
         pCutTemp->nTreeLeaves = Gia_CutTreeLeaves( p, pCutTemp );
+        pCutTemp->CostF = Gia_CutGetCost( p, pCutTemp );
     }
     return pList[0];
 }
@@ -512,6 +529,7 @@ void Gia_StoMergeCuts( Gia_Sto_t * p, int iObj )
         if ( p->fCutMin && Gia_CutComputeTruth(p, pCut0, pCut1, fComp0, fComp1, pCutsR[nCutsR], fIsXor) )
             pCutsR[nCutsR]->Sign = Gia_CutGetSign(pCutsR[nCutsR]);
         pCutsR[nCutsR]->nTreeLeaves = Gia_CutTreeLeaves( p, pCutsR[nCutsR] );
+        pCutsR[nCutsR]->CostF = Gia_CutGetCost( p, pCutsR[nCutsR] );        
         nCutsR = Gia_CutSetAddCut( pCutsR, nCutsR, nCutNum );
     }
     p->CutCount[3] += nCutsR;
@@ -1148,6 +1166,46 @@ Vec_Ptr_t * Gia_ManMatchCutsMany( Vec_Mem_t * vTtMem, Vec_Int_t * vMap, int nFun
     if ( fVerbose )
         Abc_PrintTime( 1, "Cut matching time", Abc_Clock() - clkStart );
     return vRes;
+}
+
+/**Function*************************************************************
+
+  Synopsis    [Function enumeration.]
+
+  Description []
+               
+  SideEffects []
+
+  SeeAlso     []
+
+***********************************************************************/
+void Gia_ManDumpCuts( Gia_Man_t * p, int nCutSize, int nCutNum, int fVerbose )
+{
+    FILE * pFile = fopen( "input.txt", "wb" ); if ( !pFile ) return;
+    Gia_Sto_t * pSto = Gia_ManMatchCutsInt( p, nCutSize, nCutNum, 0 );
+    Vec_Int_t * vLevel; int i, k, c, * pCut, nCuts = 0, nNodes = 0;
+    Vec_WecForEachLevel( pSto->vCuts, vLevel, i ) if ( Vec_IntSize(vLevel) ) {
+        if ( !Gia_ObjIsAnd(Gia_ManObj(p, i)) )
+            continue;
+        Sdb_ForEachCut( Vec_IntArray(vLevel), pCut, k ) {
+            if ( pCut[0] == 1 )
+                continue;
+            fprintf( pFile, "%d ", i );
+            for ( c = 1; c <= pCut[0]; c++ )
+                fprintf( pFile, "%d ", pCut[c] );
+            fprintf( pFile, "1\n" );
+            nCuts += pCut[0];
+            nNodes++;
+        }
+    }
+    Gia_Obj_t * pObj;
+    Gia_ManForEachCo( p, pObj, i ) {
+        fprintf( pFile, "%d %d 0\n", Gia_ObjId(p, pObj), Gia_ObjFaninId0p(p, pObj) );
+    }
+    fclose( pFile );
+    Gia_StoFree( pSto );
+    if ( fVerbose )
+        printf( "Dumped %d cuts for %d nodes into file \"input.txt\".\n", nCuts, nNodes );
 }
 
 /**Function*************************************************************

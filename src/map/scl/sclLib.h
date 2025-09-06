@@ -741,7 +741,7 @@ static inline void Scl_LibHandleInputDriver2( SC_Cell * pCell, SC_PairI * pLoadI
 }
 
 /*=== sclLiberty.c ===============================================================*/
-extern SC_Lib *      Abc_SclReadLiberty( char * pFileName, int fVerbose, int fVeryVerbose, SC_DontUse dont_use );
+extern SC_Lib *      Abc_SclReadLiberty( char * pFileName, int fVerbose, int fVeryVerbose, SC_DontUse dont_use, int fSkipMultiOuts );
 /*=== sclLibScl.c ===============================================================*/
 extern SC_Lib *      Abc_SclReadFromGenlib( void * pLib );
 extern SC_Lib *      Abc_SclReadFromStr( Vec_Str_t * vOut );
@@ -766,7 +766,7 @@ extern SC_WireLoad * Abc_SclFetchWireLoadModel( SC_Lib * p, char * pName );
 extern int           Abc_SclHasDelayInfo( void * pScl );
 extern float         Abc_SclComputeAverageSlew( SC_Lib * p );
 extern void          Abc_SclDumpGenlib( char * pFileName, SC_Lib * p, float Slew, float Gain, int nGatesMin );
-extern void          Abc_SclInstallGenlib( void * pScl, float Slew, float Gain, int nGatesMin );
+extern void          Abc_SclInstallGenlib( void * pScl, float Slew, float Gain, int fUseAll, int nGatesMin );
 
 
 ABC_NAMESPACE_HEADER_END
