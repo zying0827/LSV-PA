@@ -27,7 +27,7 @@ The detailed steps are documented [here](./private-fork.md).
 Please register your student IDs and GitHub accounts in this [table](./lsv/admin/participants-id.csv).
 
 ## Assignments
-### [PA1](./lsv/pa1/README.md): Functional simulation   
+### [PA1](./lsv/pa1/pa1.pdf): Multi-output Cut Enumeration
 Submission deadline:
 - Exercises 1-3: 2023/09/21 23:59
 - Exercises 4: 2023/10/05 23:59
